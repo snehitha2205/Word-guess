@@ -1,7 +1,6 @@
 import React, { useState } from "react";
-import { apiFetch } from "../api";
 
-export default function Register({ onGoLogin }) {
+export default function Register({ onGoLogin, apiFetch }) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState("PLAYER");
@@ -15,7 +14,17 @@ export default function Register({ onGoLogin }) {
     setSuccess("");
     setLoading(true);
     try {
-      await apiFetch("/auth/register", {
+      const fetchFunc = apiFetch || (async (path, options = {}) => {
+        const token = localStorage.getItem("token");
+        const headers = { "Content-Type": "application/json", ...(options.headers || {}) };
+        if (token) headers["Authorization"] = `Bearer ${token}`;
+        const res = await fetch(`http://localhost:8000/api${path}`, { ...options, headers });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || "Request failed");
+        return data;
+      });
+
+      await fetchFunc("/auth/register", {
         method: "POST",
         body: JSON.stringify({ username, password, role }),
       });
@@ -32,15 +41,20 @@ export default function Register({ onGoLogin }) {
   return (
     <div className="auth-container">
       <div className="auth-card">
-        <img src="/logo.png" alt="Guess the Word logo" className="auth-logo-img" />
-        <h1 className="auth-title">Create Account</h1>
+        <div className="auth-logo-wrapper">
+          <img src="/logo.png" alt="Logo" className="auth-logo-img" />
+        </div>
+        <h1 className="auth-title">Create your account</h1>
         <p className="auth-subtitle">Join and start guessing</p>
         {error && <div className="alert alert-error">{error}</div>}
         {success && <div className="alert alert-success">{success}</div>}
         <form onSubmit={handleRegister} className="auth-form">
           <div className="form-group">
-            <label>Username <span className="hint">(min 5 chars)</span></label>
+            <label htmlFor="reg-username">
+              Username <span className="hint">(min 5 chars)</span>
+            </label>
             <input
+              id="reg-username"
               type="text"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
@@ -49,8 +63,11 @@ export default function Register({ onGoLogin }) {
             />
           </div>
           <div className="form-group">
-            <label>Password <span className="hint">(min 5 chars, must include letter, number, $/%/*)</span></label>
+            <label htmlFor="reg-password">
+              Password <span className="hint">(min 5 chars, must include letter, number, $/%/*)</span>
+            </label>
             <input
+              id="reg-password"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -59,8 +76,8 @@ export default function Register({ onGoLogin }) {
             />
           </div>
           <div className="form-group">
-            <label>Role</label>
-            <select value={role} onChange={(e) => setRole(e.target.value)}>
+            <label htmlFor="reg-role">Role</label>
+            <select id="reg-role" value={role} onChange={(e) => setRole(e.target.value)}>
               <option value="PLAYER">Player</option>
               <option value="ADMIN">Admin</option>
             </select>
@@ -71,7 +88,7 @@ export default function Register({ onGoLogin }) {
         </form>
         <p className="auth-switch">
           Already have an account?{" "}
-          <button className="link-btn" onClick={onGoLogin}>
+          <button type="button" className="link-btn" onClick={onGoLogin}>
             Login
           </button>
         </p>

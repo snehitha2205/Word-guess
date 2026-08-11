@@ -1,12 +1,14 @@
-import React, { useState } from "react";
-import { apiFetch } from "../api";
+import React, { useState, useEffect } from "react";
 
-// Small helper kept inside this file — not worth a separate file
 function Tile({ letter, status }) {
-  return <div className={`tile tile-${status}`}>{letter}</div>;
+  return (
+    <div className={`tile tile-${status}`}>
+      {letter}
+    </div>
+  );
 }
 
-export default function Game({ onLogout }) {
+export default function Game({ onLogout, apiFetch }) {
   const username = localStorage.getItem("username");
 
   const [gamesRemaining, setGamesRemaining] = useState(null);
@@ -22,17 +24,25 @@ export default function Game({ onLogout }) {
   const [showDialog, setShowDialog] = useState(false);
   const [initialized, setInitialized] = useState(false);
 
-  // Load today's history on mount
-  React.useEffect(() => {
+  const fetchFunc = apiFetch || (async (path, options = {}) => {
+    const token = localStorage.getItem("token");
+    const headers = { "Content-Type": "application/json", ...(options.headers || {}) };
+    if (token) headers["Authorization"] = `Bearer ${token}`;
+    const res = await fetch(`http://localhost:8000/api${path}`, { ...options, headers });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || "Request failed");
+    return data;
+  });
+
+  useEffect(() => {
     loadHistory();
   }, []);
 
   async function loadHistory() {
     try {
-      const data = await apiFetch("/game/history");
+      const data = await fetchFunc("/game/history");
       setGamesRemaining(data.games_remaining);
 
-      // Resume an active (incomplete) game if one exists
       const active = data.games.find((g) => !g.completed);
       if (active) {
         setGameId(active.game_id);
@@ -41,7 +51,6 @@ export default function Game({ onLogout }) {
         setGameOver(false);
         setWon(false);
       } else {
-        // Show the last completed game's board
         const last = data.games[data.games.length - 1];
         if (last && last.completed) {
           setGuesses(last.guesses);
@@ -60,7 +69,7 @@ export default function Game({ onLogout }) {
     setError("");
     setLoading(true);
     try {
-      const data = await apiFetch("/game/start", { method: "POST" });
+      const data = await fetchFunc("/game/start", { method: "POST" });
       setGameId(data.game_id);
       setGuesses([]);
       setAttemptsRemaining(5);
@@ -85,7 +94,7 @@ export default function Game({ onLogout }) {
     setError("");
     setLoading(true);
     try {
-      const data = await apiFetch("/game/guess", {
+      const data = await fetchFunc("/game/guess", {
         method: "POST",
         body: JSON.stringify({ game_id: gameId, guess: currentGuess }),
       });
@@ -116,7 +125,12 @@ export default function Game({ onLogout }) {
   }
 
   if (!initialized) {
-    return <div className="loading">Loading…</div>;
+    return (
+      <div className="loading">
+        <div className="loading-spinner"></div>
+        <span>Loading...</span>
+      </div>
+    );
   }
 
   return (
@@ -124,25 +138,32 @@ export default function Game({ onLogout }) {
       {/* Header */}
       <header className="game-header">
         <div className="header-left">
-          <img src="/logo.png" alt="logo" className="header-logo-img" />
-          <span className="header-title">Guess the Word</span>
+          <img src="/logo.png" alt="Logo" className="header-logo-img" />
         </div>
         <div className="header-right">
-          <span className="header-user">👤 {username}</span>
-          <button className="btn btn-secondary" onClick={onLogout}>
+          <div className="header-user">
+            <span className="user-icon">👤</span>
+            <span className="username-text">{username}</span>
+          </div>
+          <button className="btn btn-secondary btn-logout" onClick={onLogout}>
             Logout
           </button>
         </div>
       </header>
 
       <main className="game-main">
+        {/* Page Title */}
+        <div className="page-heading">
+          <h1 className="page-title">Your Game</h1>
+        </div>
+
         {/* Stats bar */}
         <div className="stats-bar">
-          <div className="stat-item">
-            <span className="stat-label">Games Left Today</span>
+          <div className="stat-card">
+            <span className="stat-label">Words Remaining Today</span>
             <span className="stat-value">{gamesRemaining !== null ? gamesRemaining : "—"}</span>
           </div>
-          <div className="stat-item">
+          <div className="stat-card">
             <span className="stat-label">Attempts Remaining</span>
             <span className="stat-value">{gameId && !gameOver ? attemptsRemaining : "—"}</span>
           </div>
@@ -152,14 +173,14 @@ export default function Game({ onLogout }) {
 
         {/* No active game */}
         {!gameId && (
-          <div className="no-game">
-            <p>
+          <div className="no-game-card">
+            <p className="no-game-text">
               {gamesRemaining === 0
                 ? "You've used all 3 games for today. Come back tomorrow!"
                 : "Start a new game to begin guessing!"}
             </p>
             {gamesRemaining > 0 && (
-              <button className="btn btn-primary" onClick={startGame} disabled={loading}>
+              <button className="btn btn-primary btn-start" onClick={startGame} disabled={loading}>
                 {loading ? "Starting…" : "Start Game"}
               </button>
             )}
@@ -168,8 +189,8 @@ export default function Game({ onLogout }) {
 
         {/* Active game */}
         {gameId && (
-          <>
-            {/* Guess grid */}
+          <div className="board-container">
+            {/* Previous guesses */}
             <div className="guesses-grid">
               {guesses.map((g, i) => (
                 <div key={i} className="guess-row">
@@ -189,61 +210,53 @@ export default function Game({ onLogout }) {
                 ))}
             </div>
 
-            {/* Input */}
+            {/* Input form */}
             {!gameOver && (
               <form onSubmit={submitGuess} className="guess-form">
                 <input
                   type="text"
                   value={currentGuess}
-                  onChange={(e) =>
-                    setCurrentGuess(
-                      e.target.value.toUpperCase().replace(/[^A-Z]/g, "").slice(0, 5)
-                    )
-                  }
-                  placeholder="Type your 5-letter guess"
+                  onChange={(e) => setCurrentGuess(e.target.value.toUpperCase().replace(/[^A-Z]/g, "").slice(0, 5))}
+                  placeholder="Enter 5-letter word"
                   className="guess-input"
                   maxLength={5}
                   disabled={loading}
                   autoFocus
                 />
-                <button
-                  type="submit"
-                  className="btn btn-primary"
-                  disabled={loading || currentGuess.length !== 5}
-                >
+                <button type="submit" className="btn btn-primary btn-guess" disabled={loading || currentGuess.length !== 5}>
                   {loading ? "Checking…" : "Guess"}
                 </button>
               </form>
             )}
 
-            {/* Post-game actions */}
+            {/* Post game actions */}
             {gameOver && gamesRemaining > 0 && (
               <div className="game-end">
-                <button className="btn btn-primary" onClick={startGame} disabled={loading}>
+                <button className="btn btn-primary btn-start" onClick={startGame} disabled={loading}>
                   {loading ? "Starting…" : "Start New Game"}
                 </button>
               </div>
             )}
             {gameOver && gamesRemaining === 0 && (
               <div className="game-end">
-                <p>No more games today. Come back tomorrow!</p>
+                <p className="no-game-text">No more games today. Come back tomorrow!</p>
               </div>
             )}
-          </>
+          </div>
         )}
 
         {/* Legend */}
-        <div className="legend">
+        <div className="legend-card">
           <div className="legend-item">
-            <div className="tile tile-correct">A</div>
+            <div className="tile tile-correct tile-legend">A</div>
             <span>Correct position</span>
           </div>
           <div className="legend-item">
-            <div className="tile tile-wrong">B</div>
+            <div className="tile tile-wrong tile-legend">B</div>
             <span>Wrong position</span>
           </div>
           <div className="legend-item">
-            <div className="tile tile-absent">C</div>
+            <div className="tile tile-absent tile-legend">C</div>
             <span>Not in word</span>
           </div>
         </div>
@@ -252,10 +265,10 @@ export default function Game({ onLogout }) {
       {/* Result dialog */}
       {showDialog && (
         <div className="dialog-overlay">
-          <div className="dialog">
+          <div className="dialog-card">
             <div className="dialog-icon">{won ? "🎉" : "😢"}</div>
             <p className="dialog-message">{message}</p>
-            <button className="btn btn-primary" onClick={handleDialogOk}>
+            <button className="btn btn-primary btn-dialog" onClick={handleDialogOk}>
               OK
             </button>
           </div>

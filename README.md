@@ -29,18 +29,31 @@ A full-stack word-guessing game (Wordle-style) built with React, FastAPI, and Mo
 
 ```
 word-guess/
-├── frontend/          ← React app (root of this repo is CRA frontend)
-│   ├── src/
-│   │   ├── App.js     ← All pages + logic
-│   │   ├── App.css    ← All styles
-│   │   └── index.js
-│   └── package.json
 │
 ├── backend/
-│   ├── main.py        ← FastAPI app (all endpoints)
-│   ├── requirements.txt
-│   └── .env
+│   ├── main.py              # FastAPI app & API setup
+│   ├── auth.py              # Authentication & JWT
+│   ├── database.py          # MongoDB connection
+│   ├── game.py              # Game logic & game APIs
+│   ├── admin.py             # Admin reports
+│   ├── requirements.txt     # Python dependencies
+│   └── .env                 # Environment variables
 │
+├── public/
+│   └── logo.png             # Project logo
+│
+├── src/
+│   ├── components/
+│   │   ├── Login.jsx        # Login page
+│   │   ├── Register.jsx     # Registration page
+│   │   └── Game.jsx         # Player game
+│   │
+│   ├── App.js               # Main application
+│   ├── App.css              # Application styling
+│   └── index.js             # React entry point
+│
+├── package.json             # Frontend dependencies
+├── .gitignore
 └── README.md
 ```
 

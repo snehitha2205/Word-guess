@@ -1,7 +1,6 @@
 import React, { useState } from "react";
-import { apiFetch } from "../api";
 
-export default function Login({ onLogin, onGoRegister }) {
+export default function Login({ onLogin, onGoRegister, apiFetch }) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -12,7 +11,17 @@ export default function Login({ onLogin, onGoRegister }) {
     setError("");
     setLoading(true);
     try {
-      const data = await apiFetch("/auth/login", {
+      const fetchFunc = apiFetch || (async (path, options = {}) => {
+        const token = localStorage.getItem("token");
+        const headers = { "Content-Type": "application/json", ...(options.headers || {}) };
+        if (token) headers["Authorization"] = `Bearer ${token}`;
+        const res = await fetch(`http://localhost:8000/api${path}`, { ...options, headers });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || "Request failed");
+        return data;
+      });
+
+      const data = await fetchFunc("/auth/login", {
         method: "POST",
         body: JSON.stringify({ username, password }),
       });
@@ -30,24 +39,29 @@ export default function Login({ onLogin, onGoRegister }) {
   return (
     <div className="auth-container">
       <div className="auth-card">
-        <img src="/logo.png" alt="Guess the Word logo" className="auth-logo-img" />
-        <h1 className="auth-title">Guess the Word</h1>
-        <p className="auth-subtitle">Login to play</p>
+        <div className="auth-logo-wrapper">
+          <img src="/logo.png" alt="Logo" className="auth-logo-img" />
+        </div>
+        <h1 className="auth-title">Welcome back</h1>
+        <p className="auth-subtitle">Sign in to continue</p>
         {error && <div className="alert alert-error">{error}</div>}
         <form onSubmit={handleLogin} className="auth-form">
           <div className="form-group">
-            <label>Username</label>
+            <label htmlFor="login-username">Username</label>
             <input
+              id="login-username"
               type="text"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               placeholder="Enter username"
               required
+              autoFocus
             />
           </div>
           <div className="form-group">
-            <label>Password</label>
+            <label htmlFor="login-password">Password</label>
             <input
+              id="login-password"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -61,7 +75,7 @@ export default function Login({ onLogin, onGoRegister }) {
         </form>
         <p className="auth-switch">
           Don't have an account?{" "}
-          <button className="link-btn" onClick={onGoRegister}>
+          <button type="button" className="link-btn" onClick={onGoRegister}>
             Register
           </button>
         </p>

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import "./App.css";
 
 const API = "http://localhost:8000/api";
@@ -52,24 +52,29 @@ function LoginPage({ onLogin, onGoRegister }) {
   return (
     <div className="auth-container">
       <div className="auth-card">
-        <div className="auth-logo">🔤</div>
-        <h1 className="auth-title">Guess the Word</h1>
-        <p className="auth-subtitle">Login to play</p>
+        <div className="auth-logo-wrapper">
+          <img src="/logo.png" alt="Logo" className="auth-logo-img" />
+        </div>
+        <h1 className="auth-title">Welcome back</h1>
+        <p className="auth-subtitle">Sign in to continue</p>
         {error && <div className="alert alert-error">{error}</div>}
         <form onSubmit={handleLogin} className="auth-form">
           <div className="form-group">
-            <label>Username</label>
+            <label htmlFor="login-username">Username</label>
             <input
+              id="login-username"
               type="text"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               placeholder="Enter username"
               required
+              autoFocus
             />
           </div>
           <div className="form-group">
-            <label>Password</label>
+            <label htmlFor="login-password">Password</label>
             <input
+              id="login-password"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -83,7 +88,7 @@ function LoginPage({ onLogin, onGoRegister }) {
         </form>
         <p className="auth-switch">
           Don't have an account?{" "}
-          <button className="link-btn" onClick={onGoRegister}>
+          <button type="button" className="link-btn" onClick={onGoRegister}>
             Register
           </button>
         </p>
@@ -126,15 +131,20 @@ function RegisterPage({ onGoLogin }) {
   return (
     <div className="auth-container">
       <div className="auth-card">
-        <div className="auth-logo">🔤</div>
-        <h1 className="auth-title">Create Account</h1>
+        <div className="auth-logo-wrapper">
+          <img src="/logo.png" alt="Logo" className="auth-logo-img" />
+        </div>
+        <h1 className="auth-title">Create your account</h1>
         <p className="auth-subtitle">Join and start guessing</p>
         {error && <div className="alert alert-error">{error}</div>}
         {success && <div className="alert alert-success">{success}</div>}
         <form onSubmit={handleRegister} className="auth-form">
           <div className="form-group">
-            <label>Username <span className="hint">(min 5 chars)</span></label>
+            <label htmlFor="reg-username">
+              Username <span className="hint">(min 5 chars)</span>
+            </label>
             <input
+              id="reg-username"
               type="text"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
@@ -143,8 +153,11 @@ function RegisterPage({ onGoLogin }) {
             />
           </div>
           <div className="form-group">
-            <label>Password <span className="hint">(min 5 chars, must include letter, number, $/%/*)</span></label>
+            <label htmlFor="reg-password">
+              Password <span className="hint">(min 5 chars, must include letter, number, $/%/*)</span>
+            </label>
             <input
+              id="reg-password"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -153,8 +166,8 @@ function RegisterPage({ onGoLogin }) {
             />
           </div>
           <div className="form-group">
-            <label>Role</label>
-            <select value={role} onChange={(e) => setRole(e.target.value)}>
+            <label htmlFor="reg-role">Role</label>
+            <select id="reg-role" value={role} onChange={(e) => setRole(e.target.value)}>
               <option value="PLAYER">Player</option>
               <option value="ADMIN">Admin</option>
             </select>
@@ -165,7 +178,7 @@ function RegisterPage({ onGoLogin }) {
         </form>
         <p className="auth-switch">
           Already have an account?{" "}
-          <button className="link-btn" onClick={onGoLogin}>
+          <button type="button" className="link-btn" onClick={onGoLogin}>
             Login
           </button>
         </p>
@@ -204,8 +217,7 @@ function GamePage({ onLogout }) {
   const [showDialog, setShowDialog] = useState(false);
   const [initialized, setInitialized] = useState(false);
 
-  // Load today's history on mount
-  React.useEffect(() => {
+  useEffect(() => {
     loadHistory();
   }, []);
 
@@ -214,7 +226,6 @@ function GamePage({ onLogout }) {
       const data = await apiFetch("/game/history");
       setGamesRemaining(data.games_remaining);
 
-      // If there's an active (incomplete) game today, resume it
       const active = data.games.find((g) => !g.completed);
       if (active) {
         setGameId(active.game_id);
@@ -223,7 +234,6 @@ function GamePage({ onLogout }) {
         setGameOver(false);
         setWon(false);
       } else {
-        // check if last game was completed
         const last = data.games[data.games.length - 1];
         if (last && last.completed) {
           setGuesses(last.guesses);
@@ -298,7 +308,12 @@ function GamePage({ onLogout }) {
   }
 
   if (!initialized) {
-    return <div className="loading">Loading…</div>;
+    return (
+      <div className="loading">
+        <div className="loading-spinner"></div>
+        <span>Loading...</span>
+      </div>
+    );
   }
 
   return (
@@ -306,25 +321,32 @@ function GamePage({ onLogout }) {
       {/* Header */}
       <header className="game-header">
         <div className="header-left">
-          <span className="header-logo">🔤</span>
-          <span className="header-title">Guess the Word</span>
+          <img src="/logo.png" alt="Logo" className="header-logo-img" />
         </div>
         <div className="header-right">
-          <span className="header-user">👤 {username}</span>
-          <button className="btn btn-secondary" onClick={onLogout}>
+          <div className="header-user">
+            <span className="user-icon">👤</span>
+            <span className="username-text">{username}</span>
+          </div>
+          <button className="btn btn-secondary btn-logout" onClick={onLogout}>
             Logout
           </button>
         </div>
       </header>
 
       <main className="game-main">
+        {/* Page Title */}
+        <div className="page-heading">
+          <h1 className="page-title">Your Game</h1>
+        </div>
+
         {/* Stats bar */}
         <div className="stats-bar">
-          <div className="stat-item">
-            <span className="stat-label">Games Left Today</span>
+          <div className="stat-card">
+            <span className="stat-label">Words Remaining Today</span>
             <span className="stat-value">{gamesRemaining !== null ? gamesRemaining : "—"}</span>
           </div>
-          <div className="stat-item">
+          <div className="stat-card">
             <span className="stat-label">Attempts Remaining</span>
             <span className="stat-value">{gameId && !gameOver ? attemptsRemaining : "—"}</span>
           </div>
@@ -334,14 +356,14 @@ function GamePage({ onLogout }) {
 
         {/* No active game */}
         {!gameId && (
-          <div className="no-game">
-            <p>
+          <div className="no-game-card">
+            <p className="no-game-text">
               {gamesRemaining === 0
                 ? "You've used all 3 games for today. Come back tomorrow!"
                 : "Start a new game to begin guessing!"}
             </p>
             {gamesRemaining > 0 && (
-              <button className="btn btn-primary" onClick={startGame} disabled={loading}>
+              <button className="btn btn-primary btn-start" onClick={startGame} disabled={loading}>
                 {loading ? "Starting…" : "Start Game"}
               </button>
             )}
@@ -350,7 +372,7 @@ function GamePage({ onLogout }) {
 
         {/* Active game */}
         {gameId && (
-          <>
+          <div className="board-container">
             {/* Previous guesses */}
             <div className="guesses-grid">
               {guesses.map((g, i) => (
@@ -378,49 +400,58 @@ function GamePage({ onLogout }) {
                   type="text"
                   value={currentGuess}
                   onChange={(e) => setCurrentGuess(e.target.value.toUpperCase().replace(/[^A-Z]/g, "").slice(0, 5))}
-                  placeholder="Type your 5-letter guess"
+                  placeholder="Enter 5-letter word"
                   className="guess-input"
                   maxLength={5}
                   disabled={loading}
                   autoFocus
                 />
-                <button type="submit" className="btn btn-primary" disabled={loading || currentGuess.length !== 5}>
+                <button type="submit" className="btn btn-primary btn-guess" disabled={loading || currentGuess.length !== 5}>
                   {loading ? "Checking…" : "Guess"}
                 </button>
               </form>
             )}
 
-            {/* After game ends, allow starting new game */}
+            {/* Post game actions */}
             {gameOver && gamesRemaining > 0 && (
               <div className="game-end">
-                <button className="btn btn-primary" onClick={startGame} disabled={loading}>
+                <button className="btn btn-primary btn-start" onClick={startGame} disabled={loading}>
                   {loading ? "Starting…" : "Start New Game"}
                 </button>
               </div>
             )}
             {gameOver && gamesRemaining === 0 && (
               <div className="game-end">
-                <p>No more games today. Come back tomorrow!</p>
+                <p className="no-game-text">No more games today. Come back tomorrow!</p>
               </div>
             )}
-          </>
+          </div>
         )}
 
         {/* Legend */}
-        <div className="legend">
-          <div className="legend-item"><div className="tile tile-correct">A</div><span>Correct position</span></div>
-          <div className="legend-item"><div className="tile tile-wrong">B</div><span>Wrong position</span></div>
-          <div className="legend-item"><div className="tile tile-absent">C</div><span>Not in word</span></div>
+        <div className="legend-card">
+          <div className="legend-item">
+            <div className="tile tile-correct tile-legend">A</div>
+            <span>Correct position</span>
+          </div>
+          <div className="legend-item">
+            <div className="tile tile-wrong tile-legend">B</div>
+            <span>Wrong position</span>
+          </div>
+          <div className="legend-item">
+            <div className="tile tile-absent tile-legend">C</div>
+            <span>Not in word</span>
+          </div>
         </div>
       </main>
 
       {/* Result dialog */}
       {showDialog && (
         <div className="dialog-overlay">
-          <div className="dialog">
+          <div className="dialog-card">
             <div className="dialog-icon">{won ? "🎉" : "😢"}</div>
             <p className="dialog-message">{message}</p>
-            <button className="btn btn-primary" onClick={handleDialogOk}>
+            <button className="btn btn-primary btn-dialog" onClick={handleDialogOk}>
               OK
             </button>
           </div>
@@ -438,13 +469,11 @@ function AdminPage({ onLogout }) {
 
   const [activeTab, setActiveTab] = useState("daily");
 
-  // Daily report state
   const [reportDate, setReportDate] = useState(new Date().toISOString().slice(0, 10));
   const [dailyResult, setDailyResult] = useState(null);
   const [dailyError, setDailyError] = useState("");
   const [dailyLoading, setDailyLoading] = useState(false);
 
-  // User report state
   const [reportUser, setReportUser] = useState("");
   const [userResult, setUserResult] = useState(null);
   const [userError, setUserError] = useState("");
@@ -485,28 +514,38 @@ function AdminPage({ onLogout }) {
       {/* Header */}
       <header className="game-header">
         <div className="header-left">
-          <span className="header-logo">🛡️</span>
-          <span className="header-title">Admin Dashboard</span>
+          <img src="/logo.png" alt="Logo" className="header-logo-img" />
         </div>
         <div className="header-right">
-          <span className="header-user">👤 {username}</span>
-          <button className="btn btn-secondary" onClick={onLogout}>
+          <div className="header-user">
+            <span className="user-icon">👤</span>
+            <span className="username-text">{username}</span>
+          </div>
+          <button className="btn btn-secondary btn-logout" onClick={onLogout}>
             Logout
           </button>
         </div>
       </header>
 
       <main className="admin-main">
+        {/* Title */}
+        <div className="page-heading">
+          <h1 className="page-title">Admin Dashboard</h1>
+          <p className="page-subtitle">Monitor game activity and player statistics</p>
+        </div>
+
         {/* Tabs */}
-        <div className="tabs">
+        <div className="admin-tabs">
           <button
-            className={`tab-btn ${activeTab === "daily" ? "tab-active" : ""}`}
+            type="button"
+            className={`admin-tab-btn ${activeTab === "daily" ? "tab-active" : ""}`}
             onClick={() => setActiveTab("daily")}
           >
             📅 Daily Report
           </button>
           <button
-            className={`tab-btn ${activeTab === "user" ? "tab-active" : ""}`}
+            type="button"
+            className={`admin-tab-btn ${activeTab === "user" ? "tab-active" : ""}`}
             onClick={() => setActiveTab("user")}
           >
             👤 User Report
@@ -516,91 +555,99 @@ function AdminPage({ onLogout }) {
         {/* Daily Report */}
         {activeTab === "daily" && (
           <div className="report-section">
-            <h2>Daily Report</h2>
-            <p className="report-desc">View gameplay statistics for a specific date.</p>
-            {dailyError && <div className="alert alert-error">{dailyError}</div>}
-            <form onSubmit={fetchDailyReport} className="report-form">
-              <div className="form-group">
-                <label>Select Date</label>
-                <input
-                  type="date"
-                  value={reportDate}
-                  onChange={(e) => setReportDate(e.target.value)}
-                  required
-                />
-              </div>
-              <button type="submit" className="btn btn-primary" disabled={dailyLoading}>
-                {dailyLoading ? "Loading…" : "Get Report"}
-              </button>
-            </form>
+            <div className="section-card">
+              <h2 className="section-title">Daily Report</h2>
+              <p className="section-desc">View gameplay statistics for a specific date.</p>
+              {dailyError && <div className="alert alert-error">{dailyError}</div>}
+              <form onSubmit={fetchDailyReport} className="report-form">
+                <div className="form-group">
+                  <label htmlFor="daily-date">Select Date</label>
+                  <input
+                    id="daily-date"
+                    type="date"
+                    value={reportDate}
+                    onChange={(e) => setReportDate(e.target.value)}
+                    required
+                  />
+                </div>
+                <button type="submit" className="btn btn-primary" disabled={dailyLoading}>
+                  {dailyLoading ? "Loading…" : "Get Report"}
+                </button>
+              </form>
 
-            {dailyResult && (
-              <div className="report-result">
-                <h3>Results for {dailyResult.date}</h3>
-                <div className="report-cards">
-                  <div className="report-card">
-                    <div className="report-card-value">{dailyResult.users_played}</div>
-                    <div className="report-card-label">Users Played</div>
-                  </div>
-                  <div className="report-card">
-                    <div className="report-card-value">{dailyResult.correct_guesses}</div>
-                    <div className="report-card-label">Correct Guesses (Words Won)</div>
+              {dailyResult && (
+                <div className="report-result">
+                  <h3 className="result-title">Results for {dailyResult.date}</h3>
+                  <div className="report-cards">
+                    <div className="report-stat-card">
+                      <div className="report-stat-value">{dailyResult.users_played}</div>
+                      <div className="report-stat-label">Users Played</div>
+                    </div>
+                    <div className="report-stat-card">
+                      <div className="report-stat-value">{dailyResult.correct_guesses}</div>
+                      <div className="report-stat-label">Correct Guesses (Words Won)</div>
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         )}
 
         {/* User Report */}
         {activeTab === "user" && (
           <div className="report-section">
-            <h2>User Report</h2>
-            <p className="report-desc">View detailed game history for a specific player.</p>
-            {userError && <div className="alert alert-error">{userError}</div>}
-            <form onSubmit={fetchUserReport} className="report-form">
-              <div className="form-group">
-                <label>Username</label>
-                <input
-                  type="text"
-                  value={reportUser}
-                  onChange={(e) => setReportUser(e.target.value)}
-                  placeholder="Enter username"
-                  required
-                />
-              </div>
-              <button type="submit" className="btn btn-primary" disabled={userLoading}>
-                {userLoading ? "Loading…" : "Get Report"}
-              </button>
-            </form>
+            <div className="section-card">
+              <h2 className="section-title">User Report</h2>
+              <p className="section-desc">View detailed game history for a specific player.</p>
+              {userError && <div className="alert alert-error">{userError}</div>}
+              <form onSubmit={fetchUserReport} className="report-form">
+                <div className="form-group">
+                  <label htmlFor="user-search">Username</label>
+                  <input
+                    id="user-search"
+                    type="text"
+                    value={reportUser}
+                    onChange={(e) => setReportUser(e.target.value)}
+                    placeholder="Enter username"
+                    required
+                  />
+                </div>
+                <button type="submit" className="btn btn-primary" disabled={userLoading}>
+                  {userLoading ? "Loading…" : "Get Report"}
+                </button>
+              </form>
 
-            {userResult && (
-              <div className="report-result">
-                <h3>Report for: {userResult.username}</h3>
-                {userResult.report.length === 0 ? (
-                  <p>No games played yet.</p>
-                ) : (
-                  <table className="report-table">
-                    <thead>
-                      <tr>
-                        <th>Date</th>
-                        <th>Words Tried</th>
-                        <th>Correct Guesses</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {userResult.report.map((row, i) => (
-                        <tr key={i}>
-                          <td>{row.date}</td>
-                          <td>{row.words_tried}</td>
-                          <td>{row.correct_guesses}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                )}
-              </div>
-            )}
+              {userResult && (
+                <div className="report-result">
+                  <h3 className="result-title">Report for: {userResult.username}</h3>
+                  {userResult.report.length === 0 ? (
+                    <p className="no-data-msg">No games played yet.</p>
+                  ) : (
+                    <div className="table-wrapper">
+                      <table className="report-table">
+                        <thead>
+                          <tr>
+                            <th>Date</th>
+                            <th>Words Tried</th>
+                            <th>Correct Guesses</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {userResult.report.map((row, i) => (
+                            <tr key={i}>
+                              <td>{row.date}</td>
+                              <td>{row.words_tried}</td>
+                              <td>{row.correct_guesses}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         )}
       </main>
@@ -612,27 +659,22 @@ function AdminPage({ onLogout }) {
 // App Root
 // ──────────────────────────────────────────────
 export default function App() {
-  const [page, setPage] = useState("login"); // login | register | game | admin
-  const [role, setRole] = useState(null);
+  const [page, setPage] = useState("login");
 
-  // Check if already logged in
-  React.useEffect(() => {
+  useEffect(() => {
     const token = getToken();
     const storedRole = localStorage.getItem("role");
     if (token && storedRole) {
-      setRole(storedRole);
       setPage(storedRole === "ADMIN" ? "admin" : "game");
     }
   }, []);
 
   function handleLogin(userRole) {
-    setRole(userRole);
     setPage(userRole === "ADMIN" ? "admin" : "game");
   }
 
   function handleLogout() {
     localStorage.clear();
-    setRole(null);
     setPage("login");
   }
 
@@ -647,3 +689,4 @@ export default function App() {
     />
   );
 }
+
