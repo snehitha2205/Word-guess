@@ -1,70 +1,157 @@
-# Getting Started with Create React App
+# Guess the Word 🔤
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+A full-stack word-guessing game (Wordle-style) built with React, FastAPI, and MongoDB.
 
-## Available Scripts
+---
 
-In the project directory, you can run:
+## Features
 
-### `npm start`
+- **Player**: Guess a hidden 5-letter word in up to 5 attempts; play up to 3 games per day
+- **Admin**: View daily and per-user gameplay reports
+- Green / Orange / Grey tile feedback with correct repeated-letter handling
+- JWT authentication with password hashing (bcrypt)
+- Role-based access control (PLAYER / ADMIN)
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+---
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+## Tech Stack
 
-### `npm test`
+| Layer     | Technology              |
+|-----------|-------------------------|
+| Frontend  | React.js (CRA), CSS     |
+| Backend   | Python, FastAPI         |
+| Database  | MongoDB                 |
+| Auth      | JWT + bcrypt            |
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+---
 
-### `npm run build`
+## Project Structure
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+```
+word-guess/
+├── frontend/          ← React app (root of this repo is CRA frontend)
+│   ├── src/
+│   │   ├── App.js     ← All pages + logic
+│   │   ├── App.css    ← All styles
+│   │   └── index.js
+│   └── package.json
+│
+├── backend/
+│   ├── main.py        ← FastAPI app (all endpoints)
+│   ├── requirements.txt
+│   └── .env
+│
+└── README.md
+```
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+> **Note:** The React app lives in the repository root (CRA default). The backend lives in `backend/`.
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+---
 
-### `npm run eject`
+## MongoDB Setup
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+1. Install MongoDB Community Edition **or** use [MongoDB Atlas](https://www.mongodb.com/cloud/atlas) (free tier).
+2. For a local install, start with:
+   ```
+   mongod
+   ```
+3. The app connects to `mongodb://localhost:27017` by default. Change `MONGO_URI` in `.env` for Atlas.
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+---
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+## Environment Variables
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+Create `backend/.env`:
 
-## Learn More
+```env
+MONGO_URI=mongodb://localhost:27017
+JWT_SECRET=your_super_secret_jwt_key_change_this
+```
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+---
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+## Backend Setup
 
-### Code Splitting
+```bash
+cd backend
+python -m venv venv
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+# Windows
+venv\Scripts\activate
 
-### Analyzing the Bundle Size
+# macOS / Linux
+source venv/bin/activate
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+pip install -r requirements.txt
+```
 
-### Making a Progressive Web App
+The 25 seed words are inserted automatically the first time the server starts.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+---
 
-### Advanced Configuration
+## Frontend Setup
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+```bash
+# In the project root
+npm install
+```
 
-### Deployment
+---
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+## How to Run
 
-### `npm run build` fails to minify
+**Terminal 1 – Backend**
+```bash
+cd backend
+venv\Scripts\activate       # Windows
+uvicorn main:app --reload --port 8000
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+**Terminal 2 – Frontend**
+```bash
+npm start
+```
+
+Open [http://localhost:3000](http://localhost:3000)
+
+---
+
+## Admin Account
+
+Register through the UI and select **Admin** as the role, or use the register API directly:
+
+```bash
+curl -X POST http://localhost:8000/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"username": "admin1", "password": "Admin1$", "role": "ADMIN"}'
+```
+
+Password rules: min 5 chars, must contain a letter, a number, and one of `$`, `%`, `*`.
+
+---
+
+## API Overview
+
+| Method | Endpoint                           | Auth     | Description           |
+|--------|------------------------------------|----------|-----------------------|
+| POST   | `/api/auth/register`               | None     | Register user         |
+| POST   | `/api/auth/login`                  | None     | Login, get JWT        |
+| POST   | `/api/game/start`                  | Player   | Start a new game      |
+| POST   | `/api/game/guess`                  | Player   | Submit a guess        |
+| GET    | `/api/game/history`                | Player   | Today's game history  |
+| GET    | `/api/admin/daily-report?date=...` | Admin    | Daily stats           |
+| GET    | `/api/admin/user-report/{username}`| Admin    | Per-user stats        |
+
+Interactive docs: [http://localhost:8000/docs](http://localhost:8000/docs)
+
+---
+
+## How to Test
+
+1. **Register** a PLAYER account and an ADMIN account.
+2. **Login** as player → start game → guess words → verify green/orange/grey tiles.
+3. Play 3 games → confirm 4th is blocked ("Daily limit reached").
+4. Make 5 wrong guesses → confirm "Better luck next time".
+5. Login as admin → Daily Report for today → confirm user count and correct guesses.
+6. Admin → User Report → enter player's username → confirm per-day breakdown.
+7. Try accessing `/api/admin/daily-report` with a player token → should get 403.
