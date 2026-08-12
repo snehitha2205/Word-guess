@@ -15,7 +15,7 @@ export default function Login({ onLogin, onGoRegister, apiFetch }) {
         const token = localStorage.getItem("token");
         const headers = { "Content-Type": "application/json", ...(options.headers || {}) };
         if (token) headers["Authorization"] = `Bearer ${token}`;
-        const res = await fetch(`http://localhost:8000/api${path}`, { ...options, headers });
+        const res = await fetch(`https://word-guess-backend-t7tg.onrender.com/api${path}`, { ...options, headers });
         const data = await res.json();
         if (!res.ok) throw new Error(data.detail || "Request failed");
         return data;

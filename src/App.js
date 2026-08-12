@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import "./App.css";
 
-const API = "http://localhost:8000/api";
+const API = "https://word-guess-backend-t7tg.onrender.com/api";
 
 // ──────────────────────────────────────────────
 // Auth helpers
